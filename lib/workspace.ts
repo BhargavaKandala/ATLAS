@@ -1,5 +1,5 @@
 export type Kind = "task" | "job" | "resume" | "deal" | "transaction";
-export type Module = "command" | "career" | "business" | "finance";
+export type Module = "command" | "career" | "business" | "finance" | "ai";
 
 type Common = { title: string; date: string | null; notes: string };
 export type Task = Common & { kind: "task"; date: string; status: "Open" | "Done"; area: "Workspace" | "Career" | "Business" | "Finance"; priority: "High" | "Medium" | "Low" };
@@ -79,7 +79,7 @@ export function recordText(record: WorkspaceRecord) {
   }
 }
 
-export async function api<T>(route: string, method = "GET", body?: Payload): Promise<T> {
+export async function api<T>(route: string, method = "GET", body?: object): Promise<T> {
   const response = await fetch(`/api/atlas/${route}`, {
     method,
     headers: body ? { "Content-Type": "application/json" } : undefined,

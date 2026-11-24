@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { api, dateKey, kinds, type Kind, type Module, type Payload, type RecordOf, type Workspace, type WorkspaceRecord } from "@/lib/workspace";
 import { Dashboard } from "./dashboard";
+import { AiCommand } from "./ai-command";
 import { Business, Career, Finance } from "./modules";
 import { EditRecord, Modal, SearchWorkspace } from "./dialogs";
 
@@ -16,10 +17,11 @@ const modules = {
   career: { title: "Career OS", subtitle: "Track applications, interviews, and résumé versions.", icon: BriefcaseBusiness, action: "Add application", kind: "job" },
   business: { title: "Business OS", subtitle: "Manage opportunities, client relationships, and follow-ups.", icon: TrendingUp, action: "Add opportunity", kind: "deal" },
   finance: { title: "Finance OS", subtitle: "Stay on top of income, expenses, and savings.", icon: Wallet, action: "Add transaction", kind: "transaction" },
-} satisfies Record<Module, { title: string; subtitle: string; icon: typeof Wallet; action: string; kind?: Kind }>;
+  ai: { title: "AI Command", subtitle: "Get a daily briefing, weigh decisions, and plan your work.", icon: Sparkles },
+} satisfies Record<Module, { title: string; subtitle: string; icon: typeof Wallet; action?: string; kind?: Kind }>;
 
 const moduleKeys = Object.keys(modules) as Module[];
-const future = [["Knowledge OS", BookOpen], ["Project OS", FolderKanban], ["Personal OS", HeartPulse], ["AI Command", Sparkles]] as const;
+const future = [["Knowledge OS", BookOpen], ["Project OS", FolderKanban], ["Personal OS", HeartPulse]] as const;
 const quickAdd = [["task", Target], ["job", BriefcaseBusiness], ["deal", TrendingUp], ["transaction", Wallet], ["resume", FileText]] as const;
 type Overlay = { mode: "search" } | { mode: "edit"; kind: Kind; record?: WorkspaceRecord } | { mode: "demo" };
 
@@ -208,18 +210,18 @@ export function Atlas({ account, initial }: { account: string | null; initial?: 
       <main className="main-content">
         <div className="page-heading">
           <div><h1>{page.title}</h1><p>{page.subtitle}</p></div>
-          <div className="quick-wrap" ref={quickMenu}>
+          {"action" in page && <div className="quick-wrap" ref={quickMenu}>
             <button className="button button-primary main-action" disabled={!workspace} aria-expanded={module === "command" ? quick : undefined} onClick={() => "kind" in page ? open(page.kind) : setQuick(!quick)}>
               <Plus size={18} strokeWidth={2.3} />{page.action}{module === "command" && <ChevronDown size={14} />}
             </button>
             {quick && <div className="quick-menu">{quickAdd.map(([kind, Icon]) => <button key={kind} onClick={() => open(kind)}><Icon size={16} />{kinds[kind].label}<ArrowUpRight size={13} className="quick-arrow" /></button>)}</div>}
-          </div>
+          </div>}
         </div>
         {loadError && <div className="error-banner" role="alert"><CircleAlert size={18} />{loadError}<button className="text-button" onClick={refresh}>Retry</button></div>}
-        {workspace && (module === "command" ?
+        {module === "ai" ? <AiCommand /> : workspace && (module === "command" ?
           <Dashboard workspace={workspace} today={today} open={open} navigate={navigate} toggleTask={toggleTask} pendingTask={pendingTask} /> :
           <Panel key={module} workspace={workspace} today={today} open={open} />)}
-        {!workspace && !loadError && <div className="panel loading" role="status">Loading workspace…</div>}
+        {module !== "ai" && !workspace && !loadError && <div className="panel loading" role="status">Loading workspace…</div>}
       </main>
     </div>
     {overlay?.mode === "search" && <SearchWorkspace key="search" records={workspace?.records ?? []} close={() => setOverlay(undefined)} open={open} />}

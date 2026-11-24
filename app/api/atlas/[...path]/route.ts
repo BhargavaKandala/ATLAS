@@ -18,7 +18,7 @@ async function forward(request: Request, { params }: { params: Promise<{ path: s
   }
   const { path } = await params;
   const route = path.join("/");
-  if (!/^(workspace|demo|records(?:\/[a-f\d-]{36})?)$/.test(route)) {
+  if (!/^(workspace|demo|records(?:\/[a-f\d-]{36})?|ai\/(config|runs))$/.test(route)) {
     return new Response(null, { status: 404 });
   }
 
@@ -28,7 +28,7 @@ async function forward(request: Request, { params }: { params: Promise<{ path: s
       headers: { "Content-Type": "application/json" },
       body: ["POST", "PUT"].includes(request.method) ? await request.text() : undefined,
       cache: "no-store",
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(route === "ai/runs" && request.method === "POST" ? 90000 : 10000),
     });
     return new Response(upstream.body, {
       status: upstream.status,
