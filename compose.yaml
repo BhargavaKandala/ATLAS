@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: atlas
+      POSTGRES_USER: atlas
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - atlas-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "atlas", "-d", "atlas"]
+      interval: 5s
+      timeout: 4s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      ATLAS_DATABASE_URL: postgresql+psycopg://atlas:${POSTGRES_PASSWORD}@db:5432/atlas
+      ATLAS_CURRENCY: ${ATLAS_CURRENCY:-USD}
+      ATLAS_DEMO_DATA: "0"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 5s
+      timeout: 4s
+      retries: 10
+
+  web:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${ATLAS_PORT:-3000}:3000"
+    environment:
+      ATLAS_API_URL: http://api:8000
+      ATLAS_AUTH: "1"
+      ATLAS_AUTH_DATABASE_URL: postgresql://atlas:${POSTGRES_PASSWORD}@db:5432/atlas
+      ATLAS_OWNER_EMAIL: ${ATLAS_OWNER_EMAIL:?Set ATLAS_OWNER_EMAIL}
+      ATLAS_SETUP_TOKEN: ${ATLAS_SETUP_TOKEN:-}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?Set BETTER_AUTH_URL}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  atlas-db:
